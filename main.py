@@ -488,9 +488,9 @@ class OllamaClient:
         self.base_url = f"http://{host}:{port}"
         self.embed_model = "nomic-embed-text"
         self.gen_model = "llama3.2"
-        self.groq_api_key = os.environ.get("GROQ_API_KEY", "").strip()
+        self.groq_api_key = os.environ.get("GROQ_API_KEY", "").strip().strip('"').strip("'")
         if self.groq_api_key:
-            self.gen_model = "llama-3.2-3b-preview (Groq Cloud)"
+            self.gen_model = "llama-3.1-8b-instant (Groq Cloud)"
 
     def is_available(self):
         if self.groq_api_key:
@@ -534,7 +534,7 @@ class OllamaClient:
         if self.groq_api_key:
             url = "https://api.groq.com/openai/v1/chat/completions"
             data = json.dumps({
-                "model": "llama-3.2-3b-preview",
+                "model": "llama-3.1-8b-instant",
                 "messages": [{"role": "user", "content": prompt}]
             }).encode('utf-8')
             req = urllib.request.Request(
@@ -542,7 +542,8 @@ class OllamaClient:
                 data=data,
                 headers={
                     "Content-Type": "application/json",
-                    "Authorization": f"Bearer {self.groq_api_key}"
+                    "Authorization": f"Bearer {self.groq_api_key}",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
                 }
             )
             try:
@@ -552,6 +553,14 @@ class OllamaClient:
                         choices = body.get("choices", [])
                         if choices:
                             return choices[0]["message"]["content"]
+            except urllib.error.HTTPError as e:
+                err_body = e.read().decode('utf-8') if e.fp else ""
+                try:
+                    err_json = json.loads(err_body)
+                    msg = err_json.get("error", {}).get("message", err_body)
+                    return f"ERROR Groq API ({e.code}): {msg}"
+                except Exception:
+                    return f"ERROR Groq API ({e.code}): {e.reason}"
             except Exception as e:
                 return f"ERROR Groq API: {str(e)}"
 
