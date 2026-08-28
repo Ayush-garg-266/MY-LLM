@@ -533,7 +533,7 @@ class OllamaClient:
     def generate(self, prompt):
         if self.groq_api_key:
             url = "https://api.groq.com/openai/v1/chat/completions"
-            models = ["llama3-8b-8192", "llama-3.3-70b-versatile", "mixtral-8x7b-32768", "gemma2-9b-it"]
+            models = ["llama-3.3-70b-versatile", "mixtral-8x7b-32768", "gemma2-9b-it"]
             for m in models:
                 data = json.dumps({
                     "model": m,
@@ -556,8 +556,8 @@ class OllamaClient:
                             if choices:
                                 return choices[0]["message"]["content"]
                 except urllib.error.HTTPError as e:
-                    if e.code == 404:
-                        continue  # Try next model if 404
+                    if e.code in (400, 404):
+                        continue  # Try next model if decommissioned or not found
                     err_body = e.read().decode('utf-8') if e.fp else ""
                     try:
                         err_json = json.loads(err_body)
