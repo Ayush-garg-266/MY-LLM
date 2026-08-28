@@ -1,0 +1,1 @@
+# Pure Python standard library implementation — zero external package dependencies
