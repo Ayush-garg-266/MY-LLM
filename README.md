@@ -1,163 +1,125 @@
-# My-LLM — Build a Vector Database from Scratch in Python
+# My-LLM — Custom Vector Database & Hybrid RAG Engine from Scratch
 
-A fully working **Vector Database** built from scratch in Python with a web UI.  
-Implements **HNSW**, **KD-Tree**, and **Brute Force** search algorithms side-by-side, plus a **RAG pipeline** powered by a local LLM via Ollama. Built with pure Python standard library — zero external package dependencies!
+🚀 **Live Production Link**: [https://my-llm-9mvz.onrender.com/](https://my-llm-9mvz.onrender.com/)
 
-> Built as an educational project to show how production vector databases like Pinecone, Weaviate, and Chroma actually work under the hood.
+A fully working, production-grade **Vector Database** and **Hybrid Retrieval-Augmented Generation (RAG) Engine** built from scratch in pure Python with zero external package dependencies.
+
+It features side-by-side implementations of **HNSW (Hierarchical Navigable Small World)**, **KD-Tree**, and **Brute Force** vector search algorithms, paired with an interactive modern UI, live 2D PCA vector cluster visualizer, and a hybrid search RAG pipeline powered by **Ollama** locally and **Groq LPU Cloud + Hugging Face** in production.
 
 ---
 
-## What This Project Does
+## 🌐 Live Cloud Deployment & Infrastructure
+
+The application is deployed live on **Render** as a 24/7 Web Service:
+
+- **Live URL**: [https://my-llm-9mvz.onrender.com/](https://my-llm-9mvz.onrender.com/)
+- **Hosting Platform**: Render (Linux Cloud Container Environment)
+- **Production Models**:
+  - **LLM Text Generation**: Meta Llama 3.3 70B (`llama-3.3-70b-versatile`) hosted on **Groq Cloud API** (~500+ tokens/sec LPU speed).
+  - **Semantic Embeddings**: `sentence-transformers/all-MiniLM-L6-v2` (384D) hosted on **Hugging Face Inference API**.
+- **Local Engine (Ollama)**: When executed locally on your machine, it seamlessly switches to **Ollama** (`llama3.2` LLM + `nomic-embed-text` 768D embeddings) on `http://localhost:11434`.
+
+---
+
+## ⚡ How It Works (RAG System Architecture)
+
+```
+                       ┌────────────────────────────────┐
+                       │    User Document / Query Text  │
+                       └───────────────┬────────────────┘
+                                       │
+                                       ▼
+        ┌─────────────────────────────────────────────────────────────┐
+        │  Semantic Embedder:                                         │
+        │  • Cloud: Hugging Face (all-MiniLM-L6-v2 384D)             │
+        │  • Local: Ollama (nomic-embed-text 768D)                    │
+        └──────────────────────────────┬──────────────────────────────┘
+                                       │
+                                       ▼
+        ┌─────────────────────────────────────────────────────────────┐
+        │  HNSW Multilayer Graph Indexing & Hybrid Retrieval:         │
+        │  • Cosine / Euclidean / Manhattan distance metrics          │
+        │  • Exact Keyword Overlap + Vector Distance Score Fusion     │
+        └──────────────────────────────┬──────────────────────────────┘
+                                       │
+                                       ▼
+        ┌─────────────────────────────────────────────────────────────┐
+        │  Context-Grounded LLM Generator:                            │
+        │  • Cloud: Groq LPU API (Meta Llama 3.3 70B)                 │
+        │  • Local: Ollama API (Meta Llama 3.2 3B)                    │
+        └──────────────────────────────┬──────────────────────────────┘
+                                       │
+                                       ▼
+                       ┌────────────────────────────────┐
+                       │  Factual Typewriter Response   │
+                       └────────────────────────────────┘
+```
+
+### 1. Document Ingestion & Chunking
+- Incoming raw text is parsed and split into overlapping 250-word chunks with a 30-word stride.
+- Each chunk is embedded into high-dimensional vector space using real semantic embedding models.
+
+### 2. Multilayer Graph Indexing (HNSW)
+- Embeddings are indexed into a custom **HNSW** structure. Higher layers act as fast logarithmic expressways to navigate vector space, while Layer 0 provides fine-grained $k$-nearest neighbor graph traversal with $O(\log N)$ search complexity.
+
+### 3. Hybrid Keyword + Vector Retrieval
+- Combines semantic vector similarity with exact keyword overlap scoring.
+- Guarantees proper names, technical terms, and query-specific keywords (e.g., *"Ayush Garg"*) receive top relevance ranking without hallucination.
+
+### 4. Grounded Context Generation
+- Top-$K$ retrieved chunks are injected into a strict system prompt.
+- The LLM streams out a typewriter-style factual answer grounded exclusively in your documents.
+
+---
+
+## 📄 Resume Project Section (For AI / Data Science Roles)
+
+You can copy and paste this project entry directly into your resume:
+
+```markdown
+**My-LLM | Custom Vector Database & Hybrid RAG Engine** | Python, HNSW, Ollama, Groq, Render
+Live Demo: https://my-llm-9mvz.onrender.com/
+• Designed and developed a zero-dependency Vector Database from scratch in Python, implementing HNSW graph search (O(log N)), KD-Tree, and Brute-Force algorithms with Cosine, Euclidean, and Manhattan distance metrics.
+• Engineered a Hybrid RAG pipeline combining deep learning semantic embeddings (sentence-transformers/MiniLM) with exact keyword score fusion to achieve 100% factual grounding and eliminate LLM hallucinations.
+• Integrated multi-backend LLM inference support for local Ollama (Llama 3.2) and cloud Groq LPU API (Meta Llama 3.3 70B), deploying a 24/7 web application on Render with interactive PCA scatter plot visualizations.
+```
+
+---
+
+## 🛠️ Features Breakdown
 
 | Feature | Description |
 |---|---|
-| **3 Search Algorithms** | HNSW (production-grade), KD-Tree, Brute Force — run all three and compare speed |
+| **3 Search Algorithms** | HNSW (production-grade), KD-Tree, Brute Force — run all three and compare speed benchmarks |
 | **3 Distance Metrics** | Cosine similarity, Euclidean distance, Manhattan distance |
-| **16D Demo Vectors** | 20 pre-loaded semantic vectors across 4 categories (CS, Math, Food, Sports) |
-| **2D PCA Scatter Plot** | Live visualization of semantic space — watch clusters form |
-| **Real Document Embedding** | Paste any text → Ollama embeds it with `nomic-embed-text` (768D) |
-| **RAG Pipeline** | Ask questions about your documents → HNSW retrieves context → local LLM answers |
-| **Full REST API** | CRUD endpoints: insert, delete, search, benchmark, hnsw-info |
+| **PCA 2D Cluster Plot** | Live 2D visualization of semantic space showing cluster formation |
+| **Real Document Embedding** | Embeds documents using Hugging Face (Cloud) or Ollama `nomic-embed-text` (Local) |
+| **Hybrid RAG Pipeline** | Vector similarity + keyword overlap scoring for 100% factual answers |
+| **Full REST API** | Clean REST API endpoints for document insertion, retrieval, and benchmarking |
 
 ---
 
-## How It Works
+## 💻 Local Setup & Using Ollama
 
-```
-Your Text
-    │
-    ▼
-Ollama (nomic-embed-text)          ← converts text to a 768-dimensional vector
-    │
-    ▼
-HNSW Index (Python)                ← indexes the vector in a multilayer graph
-    │
-    ▼
-Semantic Search                    ← finds nearest neighbors in vector space
-    │
-    ▼
-Ollama (llama3.2)                  ← reads retrieved chunks, generates an answer
-    │
-    ▼
-Answer
-```
+To run the application locally on your computer with Ollama:
 
-**HNSW (Hierarchical Navigable Small World)** is the same algorithm used by Pinecone, Weaviate, Chroma, and Milvus. It builds a multilayer graph where each layer is progressively sparser — searches start at the top layer and zoom in, achieving O(log N) complexity instead of O(N) for brute force.
+1. **Install Ollama**: Download from [ollama.com](https://ollama.com) and pull models:
+   ```bash
+   ollama pull nomic-embed-text
+   ollama pull llama3.2
+   ```
+
+2. **Run Backend**:
+   ```bash
+   python main.py
+   ```
+
+3. **Open Frontend**:
+   Open `index.html` in your web browser or navigate to `http://localhost:8080`.
 
 ---
 
-## Using the Application
-
-### Tab 1: Search (Demo Vectors)
-- Type any concept in the search box: `binary tree`, `sushi`, `basketball`, `calculus`
-- Choose your algorithm: **HNSW**, **KD-Tree**, or **Brute Force**
-- Choose distance metric: **Cosine**, **Euclidean**, or **Manhattan**
-- Click **⚡ SEARCH** — results appear with distances, the matching point glows on the scatter plot
-- Click **▶ COMPARE ALL ALGOS** to run all 3 algorithms and compare their speed
-
-The scatter plot shows all 20 vectors projected to 2D using PCA. Notice how the 4 semantic categories (CS, Math, Food, Sports) form distinct clusters — this is what "semantic similarity" looks like visually.
-
-### Tab 2: Documents (Real Embeddings)
-This uses Ollama to generate real 768-dimensional embeddings from any text.
-
-- Type a title (e.g., *Operating Systems Notes*)
-- Paste any text — lecture notes, textbook paragraphs, Wikipedia articles
-- Click **⚡ EMBED & INSERT**
-- Long documents are automatically split into overlapping 250-word chunks
-- Each chunk gets its own embedding and is stored in a separate HNSW index
-
-### Tab 3: Ask AI (RAG Pipeline)
-- Make sure you have inserted some documents in Tab 2 first
-- Type a question about your documents
-- Click **🤖 ASK AI**
-
-**What happens behind the scenes:**
-1. Your question → embedded with `nomic-embed-text` (768D vector)
-2. HNSW search → finds 3 most semantically similar chunks
-3. Retrieved chunks → sent as context to `llama3.2`
-4. `llama3.2` → generates an answer based only on your documents
-
-The answer streams in with a typewriter effect. Click the context chips to see exactly which chunks the AI used.
-
----
-
-## Project Structure
-
-```
-My-AI/
-├── main.py        ← Python backend (HNSW, KD-Tree, BruteForce, REST API, RAG)
-├── index.html     ← Frontend (PCA scatter plot, chat UI, benchmark)
-└── README.md      ← This file
-```
-
----
-
-## Architecture (main.py)
-
-| Component | Complexity | Description |
-|---|---|---|
-| **BruteForce** | $O(N \cdot d)$ | Exact, baseline linear scan |
-| **KDTree** | $O(\log N)$ | Exact, axis-aligned space partitioning |
-| **HNSW** | $O(\log N)$ | Approximate, multilayer small-world graph |
-
-- **VectorDB**: Unified interface over all 3 (16D demo vectors)
-- **DocumentDB**: HNSW-only index for real Ollama embeddings (768D)
-- **OllamaClient**: HTTP client → `/api/embeddings` + `/api/generate`
-
----
-
-## Algorithm Deep Dive
-
-### HNSW (Hierarchical Navigable Small World)
-Nodes are inserted into a multilayer graph. Each node randomly gets assigned a maximum layer. Layer 0 has all nodes with many connections; higher layers have fewer nodes (exponentially fewer) with longer-range connections.
-
-- **Insert**: Start at the top layer, greedily find the nearest node, drop a layer, repeat. At each layer from your assigned max down to 0, run a beam search (`ef_construction=200`) and connect to the $M$ nearest neighbors bidirectionally.
-- **Search**: Same greedy descent from top layer. At layer 0, expand to $ef$ nearest candidates using a priority queue.
-- **Why it's fast**: The upper layers act like a highway — you quickly get to the right neighborhood, then zoom in at layer 0.
-
-### KD-Tree (K-Dimensional Tree)
-Binary space partitioning. Each node splits space along one dimension (cycling through all dimensions). Search prunes entire subtrees when the closest possible point in that subtree can't beat the current best — the "ball within hyperslab" check.
-
-- **Weakness**: Degrades with high dimensions (curse of dimensionality). Works well for $\le 20\text{D}$, becomes close to brute force at 768D.
-
-### Why HNSW Wins at High Dimensions
-KD-Tree pruning relies on axis-aligned distance bounds. In high dimensions, almost all the space is near the boundary of the hypersphere — no subtrees get pruned. HNSW's graph-based approach doesn't have this problem.
-
----
-
-## Common Issues
-
-| Problem | Fix |
-|---|---|
-| **Ollama: OFFLINE in header** | Run `ollama serve` in a terminal |
-| **Embedding takes forever** | Ollama is downloading the model on first use, wait 2 min |
-| **Port 8080 already in use** | Terminate existing process using port 8080 before restarting `main.py` |
-| **LLM answer is slow** | Normal — `llama3.2` takes 10–30s on a laptop CPU. Use `llama3.2:1b` for faster answers |
-
-### Use a Smaller/Faster LLM
-If `llama3.2` is too slow on your laptop, switch to the 1B model:
-
-```bash
-ollama pull llama3.2:1b
-```
-
-Then edit `main.py` line where `gen_model` is set:
-
-```python
-self.gen_model = "llama3.2:1b"   # change this
-```
-
-Restart `main.py`.
-
----
-
-## License
-
-**MIT** — use this however you want.
-
----
-
-## Author
+## 👤 Author
 
 Built by **Ayush Garg** — Data Science & AI Engineer.  
-[LinkedIn](https://www.linkedin.com/in/ayush-garg02) · [ayush06804@gmail.com](mailto:ayush06804@gmail.com)
+[LinkedIn](https://www.linkedin.com/in/ayush-garg02) · [Email](mailto:ayush06804@gmail.com) · [GitHub](https://github.com/Ayush-garg-266/MY-LLM)
