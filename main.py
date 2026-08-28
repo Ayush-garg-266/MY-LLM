@@ -425,16 +425,29 @@ class DocumentDB:
             self.bf.insert(vi)
             return item.id
 
-    def search(self, q, k, max_dist=1.0):
+    def search_hybrid(self, q, k, query_text=""):
         with self.lock:
             if not self.store:
                 return []
-            raw = self.bf.knn(q, k, cosine) if len(self.store) < 10 else self.hnsw.knn(q, k, 50, cosine)
-            out = []
+            raw = self.bf.knn(q, min(len(self.store), 20), cosine) if len(self.store) < 10 else self.hnsw.knn(q, min(len(self.store), 50), 50, cosine)
+
+            q_words = set(w.lower() for w in re.findall(r'\w+', query_text) if len(w) > 2)
+
+            scored = []
             for d_val, item_id in raw:
-                if item_id in self.store and d_val <= max_dist:
-                    out.append((d_val, self.store[item_id]))
-            return out
+                if item_id in self.store:
+                    doc = self.store[item_id]
+                    doc_text_lower = (doc.title + " " + doc.text).lower()
+                    matches = sum(1 for w in q_words if w in doc_text_lower)
+                    kw_boost = (matches / max(len(q_words), 1)) * 0.75
+                    hybrid_score = d_val - kw_boost
+                    scored.append((hybrid_score, d_val, doc))
+
+            scored.sort(key=lambda x: x[0])
+            return [(d_val, doc) for _, d_val, doc in scored[:k]]
+
+    def search(self, q, k, max_dist=1.0):
+        return self.search_hybrid(q, k, "")
 
     def remove(self, item_id):
         with self.lock:
@@ -568,6 +581,23 @@ class OllamaClient:
                             return emb
             except Exception:
                 pass
+
+        # Try Hugging Face Free Inference API for real 384D sentence-transformers
+        hf_url = "https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2"
+        data = json.dumps({"inputs": text}).encode('utf-8')
+        req = urllib.request.Request(hf_url, data=data, headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"})
+        try:
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                if resp.status == 200:
+                    body = json.loads(resp.read().decode('utf-8'))
+                    if isinstance(body, list) and len(body) > 0:
+                        if isinstance(body[0], float):
+                            return body
+                        if isinstance(body[0], list):
+                            return body[0]
+        except Exception:
+            pass
+
         return self._embed_local_hash(text, 768)
 
     def generate(self, prompt):
@@ -882,7 +912,7 @@ class VectorDBRequestHandler(http.server.BaseHTTPRequestHandler):
                 self.send_json({"error": "Ollama unavailable"}, status=400)
                 return
 
-            hits = doc_db.search(q_emb, k)
+            hits = doc_db.search_hybrid(q_emb, k, question)
             contexts = [{
                 "id": doc.id,
                 "title": doc.title,
@@ -903,7 +933,7 @@ class VectorDBRequestHandler(http.server.BaseHTTPRequestHandler):
                 self.send_json({"error": "Ollama unavailable"}, status=400)
                 return
 
-            hits = doc_db.search(q_emb, k)
+            hits = doc_db.search_hybrid(q_emb, k, question)
             ctx_str = ""
             for i, (d, doc) in enumerate(hits):
                 ctx_str += f"[{i+1}] {doc.title}:\n{doc.text}\n\n"
