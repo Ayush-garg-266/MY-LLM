@@ -425,7 +425,7 @@ class DocumentDB:
             self.bf.insert(vi)
             return item.id
 
-    def search(self, q, k, max_dist=0.7):
+    def search(self, q, k, max_dist=1.0):
         with self.lock:
             if not self.store:
                 return []
@@ -906,13 +906,12 @@ class VectorDBRequestHandler(http.server.BaseHTTPRequestHandler):
                 ctx_str += f"[{i+1}] {doc.title}:\n{doc.text}\n\n"
 
             prompt = (
-                "You are a helpful assistant. Answer the user's question directly. "
-                "Use the provided context if it contains relevant information. "
-                "If it doesn't, just use your own general knowledge. "
-                "IMPORTANT: Do NOT mention the 'context', 'provided text', or say things like 'the context doesn't mention'. "
-                "Just answer the question naturally.\n\n"
-                f"Context:\n{ctx_str}"
-                f"Question: {question}\n\n"
+                "You are a factual AI assistant. Answer the user's question directly and strictly based on the Context documents provided below.\n"
+                "RULES:\n"
+                "1. If the Context contains information about the person, project, or subject in the question, state those exact facts clearly and concisely.\n"
+                "2. Do not invent facts or hallucinate details outside the provided Context.\n\n"
+                f"Context Documents:\n{ctx_str}"
+                f"User Question: {question}\n\n"
                 "Answer:"
             )
 
