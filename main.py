@@ -490,7 +490,7 @@ class OllamaClient:
         self.gen_model = "llama3.2"
         self.groq_api_key = os.environ.get("GROQ_API_KEY", "").strip().strip('"').strip("'")
         if self.groq_api_key:
-            self.gen_model = "Llama 3 (Groq Cloud)"
+            self.gen_model = "Groq AI Cloud"
 
     def is_available(self):
         if self.groq_api_key:
@@ -501,6 +501,29 @@ class OllamaClient:
                 return resp.status == 200
         except Exception:
             return False
+
+    def _get_active_groq_models(self):
+        url = "https://api.groq.com/openai/v1/models"
+        req = urllib.request.Request(
+            url,
+            headers={
+                "Authorization": f"Bearer {self.groq_api_key}",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                if resp.status == 200:
+                    body = json.loads(resp.read().decode('utf-8'))
+                    data = body.get("data", [])
+                    models = [m.get("id") for m in data if m.get("id")]
+                    if models:
+                        # Prioritize Llama 3 models if present
+                        llama_models = [m for m in models if "llama" in m.lower()]
+                        return llama_models + [m for m in models if m not in llama_models]
+        except Exception:
+            pass
+        return ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "llama-3.2-3b-preview", "qwen-2.5-coder-32b"]
 
     def _embed_local_hash(self, text, dim=768):
         words = text.lower().split()
@@ -533,7 +556,7 @@ class OllamaClient:
     def generate(self, prompt):
         if self.groq_api_key:
             url = "https://api.groq.com/openai/v1/chat/completions"
-            models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+            models = self._get_active_groq_models()
             last_err = "ERROR Groq API: Unable to reach models"
             for m in models:
                 data = json.dumps({
