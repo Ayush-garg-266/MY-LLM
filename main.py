@@ -533,7 +533,8 @@ class OllamaClient:
     def generate(self, prompt):
         if self.groq_api_key:
             url = "https://api.groq.com/openai/v1/chat/completions"
-            models = ["llama-3.3-70b-versatile", "mixtral-8x7b-32768", "gemma2-9b-it"]
+            models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "llama-3.2-3b-preview", "mixtral-8x7b-32768", "gemma2-9b-it"]
+            last_err = "ERROR Groq API: Unable to reach models"
             for m in models:
                 data = json.dumps({
                     "model": m,
@@ -556,17 +557,20 @@ class OllamaClient:
                             if choices:
                                 return choices[0]["message"]["content"]
                 except urllib.error.HTTPError as e:
-                    if e.code in (400, 404):
-                        continue  # Try next model if decommissioned or not found
                     err_body = e.read().decode('utf-8') if e.fp else ""
                     try:
                         err_json = json.loads(err_body)
                         msg = err_json.get("error", {}).get("message", err_body)
-                        return f"ERROR Groq API ({e.code}): {msg}"
+                        last_err = f"ERROR Groq API ({e.code}): {msg}"
                     except Exception:
-                        return f"ERROR Groq API ({e.code}): {e.reason}"
+                        last_err = f"ERROR Groq API ({e.code}): {e.reason}"
+                    if e.code in (400, 404) and "decommissioned" in err_body.lower():
+                        continue
+                    return last_err
                 except Exception as e:
-                    return f"ERROR Groq API: {str(e)}"
+                    last_err = f"ERROR Groq API: {str(e)}"
+                    return last_err
+            return last_err
 
         url = f"{self.base_url}/api/generate"
         data = json.dumps({"model": self.gen_model, "prompt": prompt, "stream": False}).encode('utf-8')
