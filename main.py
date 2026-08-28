@@ -527,7 +527,7 @@ class OllamaClient:
                     data = body.get("data", [])
                     models = [
                         m.get("id") for m in data
-                        if m.get("id") and not any(x in m.get("id").lower() for x in ["guard", "whisper", "embed", "vision", "safetensor"])
+                        if m.get("id") and not any(x in m.get("id").lower() for x in ["guard", "whisper", "embed", "vision", "safetensor", "canopylabs", "orpheus", "tts", "audio"])
                     ]
                     res = []
                     for p in priority:
@@ -607,12 +607,13 @@ class OllamaClient:
                     except Exception:
                         err_msg = f"ERROR Groq API ({e.code}) [{m}]: {e.reason}"
 
-                    if "decommissioned" in err_body.lower() or "does not exist" in err_body.lower():
-                        last_err = err_msg
+                    last_err = err_msg
+                    if e.code in (400, 403, 404):
                         continue
                     return err_msg
                 except Exception as e:
-                    return f"ERROR Groq API: {str(e)}"
+                    last_err = f"ERROR Groq API: {str(e)}"
+                    return last_err
             return last_err
 
         url = f"{self.base_url}/api/generate"
