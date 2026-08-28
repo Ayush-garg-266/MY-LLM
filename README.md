@@ -1,6 +1,6 @@
 # My-LLM — Custom Vector Database & Hybrid RAG Engine from Scratch
 
-🚀 **Live Production Link**: [https://my-llm-9mvz.onrender.com/](https://my-llm-9mvz.onrender.com/)
+ **Live Production Link**: [https://my-llm-9mvz.onrender.com/](https://my-llm-9mvz.onrender.com/)
 
 A fully working, production-grade **Vector Database** and **Hybrid Retrieval-Augmented Generation (RAG) Engine** built from scratch in pure Python with zero external package dependencies.
 
@@ -23,7 +23,7 @@ The application is deployed live on **Render** as a 24/7 Web Service:
 
 ---
 
-## 📄 Resume Project Section (For AI / Data Science Roles)
+##  Resume Project Section (For AI / Data Science Roles)
 
 You can copy and paste this project entry directly into your resume:
 
@@ -71,7 +71,7 @@ This uses **Hugging Face Inference API** (Cloud) or **Ollama** (Local) to genera
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 My-AI/
@@ -83,7 +83,7 @@ My-AI/
 
 ---
 
-## 🏗️ Architecture (main.py)
+##  Architecture (main.py)
 
 | Component | Complexity | Description |
 |---|---|---|
@@ -97,7 +97,7 @@ My-AI/
 
 ---
 
-## 🔬 Algorithm Deep Dive
+##  Algorithm Deep Dive
 
 ### HNSW (Hierarchical Navigable Small World)
 Nodes are inserted into a multilayer graph. Each node randomly gets assigned a maximum layer. Layer 0 has all nodes with many connections; higher layers have fewer nodes (exponentially fewer) with longer-range connections.
@@ -116,7 +116,7 @@ KD-Tree pruning relies on axis-aligned distance bounds. In high dimensions, almo
 
 ---
 
-## ❓ Common Issues & Troubleshooting
+##  Common Issues & Troubleshooting
 
 | Problem | Fix |
 |---|---|
@@ -146,7 +146,7 @@ python main.py
 
 ---
 
-## 👤 Author
+##  Author
 
 Built by **Ayush Garg** — Data Science & AI Engineer.  
 [LinkedIn](https://www.linkedin.com/in/ayush-garg02) · [Email](mailto:ayush06804@gmail.com) · [GitHub](https://github.com/Ayush-garg-266/MY-LLM)
