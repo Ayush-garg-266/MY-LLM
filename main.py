@@ -533,7 +533,7 @@ class OllamaClient:
     def generate(self, prompt):
         if self.groq_api_key:
             url = "https://api.groq.com/openai/v1/chat/completions"
-            models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768", "gemma2-9b-it"]
+            models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
             last_err = "ERROR Groq API: Unable to reach models"
             for m in models:
                 data = json.dumps({
@@ -561,15 +561,16 @@ class OllamaClient:
                     try:
                         err_json = json.loads(err_body)
                         msg = err_json.get("error", {}).get("message", err_body)
-                        last_err = f"ERROR Groq API ({e.code}): {msg}"
+                        err_msg = f"ERROR Groq API ({e.code}) [{m}]: {msg}"
                     except Exception:
-                        last_err = f"ERROR Groq API ({e.code}): {e.reason}"
-                    if e.code in (400, 404):
+                        err_msg = f"ERROR Groq API ({e.code}) [{m}]: {e.reason}"
+
+                    if "decommissioned" in err_body.lower() or "does not exist" in err_body.lower():
+                        last_err = err_msg
                         continue
-                    return last_err
+                    return err_msg
                 except Exception as e:
-                    last_err = f"ERROR Groq API: {str(e)}"
-                    return last_err
+                    return f"ERROR Groq API: {str(e)}"
             return last_err
 
         url = f"{self.base_url}/api/generate"
