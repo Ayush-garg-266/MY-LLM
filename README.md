@@ -78,7 +78,6 @@ My-AI/
 ├── main.py            ← Python backend (HNSW, KD-Tree, BruteForce, REST API, RAG)
 ├── index.html         ← Frontend (PCA scatter plot, chat UI, benchmark)
 ├── requirements.txt   ← Render build configuration
-├── Dockerfile         ← Container deployment config
 └── README.md          ← Project documentation
 ```
 
