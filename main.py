@@ -490,7 +490,7 @@ class OllamaClient:
         self.gen_model = "llama3.2"
         self.groq_api_key = os.environ.get("GROQ_API_KEY", "").strip().strip('"').strip("'")
         if self.groq_api_key:
-            self.gen_model = "llama-3.1-8b-instant (Groq Cloud)"
+            self.gen_model = "Llama 3 (Groq Cloud)"
 
     def is_available(self):
         if self.groq_api_key:
@@ -533,36 +533,40 @@ class OllamaClient:
     def generate(self, prompt):
         if self.groq_api_key:
             url = "https://api.groq.com/openai/v1/chat/completions"
-            data = json.dumps({
-                "model": "llama-3.1-8b-instant",
-                "messages": [{"role": "user", "content": prompt}]
-            }).encode('utf-8')
-            req = urllib.request.Request(
-                url,
-                data=data,
-                headers={
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {self.groq_api_key}",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                }
-            )
-            try:
-                with urllib.request.urlopen(req, timeout=60) as resp:
-                    if resp.status == 200:
-                        body = json.loads(resp.read().decode('utf-8'))
-                        choices = body.get("choices", [])
-                        if choices:
-                            return choices[0]["message"]["content"]
-            except urllib.error.HTTPError as e:
-                err_body = e.read().decode('utf-8') if e.fp else ""
+            models = ["llama3-8b-8192", "llama-3.3-70b-versatile", "mixtral-8x7b-32768", "gemma2-9b-it"]
+            for m in models:
+                data = json.dumps({
+                    "model": m,
+                    "messages": [{"role": "user", "content": prompt}]
+                }).encode('utf-8')
+                req = urllib.request.Request(
+                    url,
+                    data=data,
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {self.groq_api_key}",
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                    }
+                )
                 try:
-                    err_json = json.loads(err_body)
-                    msg = err_json.get("error", {}).get("message", err_body)
-                    return f"ERROR Groq API ({e.code}): {msg}"
-                except Exception:
-                    return f"ERROR Groq API ({e.code}): {e.reason}"
-            except Exception as e:
-                return f"ERROR Groq API: {str(e)}"
+                    with urllib.request.urlopen(req, timeout=60) as resp:
+                        if resp.status == 200:
+                            body = json.loads(resp.read().decode('utf-8'))
+                            choices = body.get("choices", [])
+                            if choices:
+                                return choices[0]["message"]["content"]
+                except urllib.error.HTTPError as e:
+                    if e.code == 404:
+                        continue  # Try next model if 404
+                    err_body = e.read().decode('utf-8') if e.fp else ""
+                    try:
+                        err_json = json.loads(err_body)
+                        msg = err_json.get("error", {}).get("message", err_body)
+                        return f"ERROR Groq API ({e.code}): {msg}"
+                    except Exception:
+                        return f"ERROR Groq API ({e.code}): {e.reason}"
+                except Exception as e:
+                    return f"ERROR Groq API: {str(e)}"
 
         url = f"{self.base_url}/api/generate"
         data = json.dumps({"model": self.gen_model, "prompt": prompt, "stream": False}).encode('utf-8')
