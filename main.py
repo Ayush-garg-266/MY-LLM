@@ -533,7 +533,7 @@ class OllamaClient:
     def generate(self, prompt):
         if self.groq_api_key:
             url = "https://api.groq.com/openai/v1/chat/completions"
-            models = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "llama-3.2-3b-preview", "mixtral-8x7b-32768", "gemma2-9b-it", "llama3-8b-8192"]
+            models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768", "gemma2-9b-it"]
             last_err = "ERROR Groq API: Unable to reach models"
             for m in models:
                 data = json.dumps({
