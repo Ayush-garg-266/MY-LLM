@@ -595,7 +595,9 @@ class OllamaClient:
                             body = json.loads(resp.read().decode('utf-8'))
                             choices = body.get("choices", [])
                             if choices:
-                                return choices[0]["message"]["content"]
+                                ans = choices[0]["message"]["content"]
+                                ans = re.sub(r"<think>.*?</think>", "", ans, flags=re.DOTALL).strip()
+                                return ans
                 except urllib.error.HTTPError as e:
                     err_body = e.read().decode('utf-8') if e.fp else ""
                     try:
