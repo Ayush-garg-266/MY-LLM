@@ -511,19 +511,36 @@ class OllamaClient:
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
             }
         )
+        priority = [
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant",
+            "llama-3.2-3b-preview",
+            "llama-3.2-1b-preview",
+            "mixtral-8x7b-32768",
+            "qwen-2.5-coder-32b",
+            "qwen-2.5-32b"
+        ]
         try:
             with urllib.request.urlopen(req, timeout=10) as resp:
                 if resp.status == 200:
                     body = json.loads(resp.read().decode('utf-8'))
                     data = body.get("data", [])
-                    models = [m.get("id") for m in data if m.get("id")]
-                    if models:
-                        # Prioritize Llama 3 models if present
-                        llama_models = [m for m in models if "llama" in m.lower()]
-                        return llama_models + [m for m in models if m not in llama_models]
+                    models = [
+                        m.get("id") for m in data
+                        if m.get("id") and not any(x in m.get("id").lower() for x in ["guard", "whisper", "embed", "vision", "safetensor"])
+                    ]
+                    res = []
+                    for p in priority:
+                        if p in models:
+                            res.append(p)
+                    for m in models:
+                        if m not in res:
+                            res.append(m)
+                    if res:
+                        return res
         except Exception:
             pass
-        return ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "llama-3.2-3b-preview", "qwen-2.5-coder-32b"]
+        return priority
 
     def _embed_local_hash(self, text, dim=768):
         words = text.lower().split()
