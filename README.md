@@ -17,7 +17,7 @@ The application is deployed live on **Render** as a 24/7 Web Service:
 - **Live URL**: [https://my-llm-9mvz.onrender.com/](https://my-llm-9mvz.onrender.com/)
 - **Hosting Platform**: Render (Linux Cloud Container Environment)
 - **Production Models**:
-  - **LLM Text Generation**: Meta Llama 3.3 70B (`llama-3.3-70b-versatile`) hosted on **Groq Cloud API** (~500+ tokens/sec LPU speed).
+  - **LLM Text Generation**: Meta Llama 3.3 70B (`llama-3.3-70b-versatile`) & Qwen 2.5/3.6 models hosted on **Groq Cloud API** (~500+ tokens/sec LPU speed), configured with explicit `max_tokens=900` budget management to safely stay below free-tier Output Tokens Per Minute (OTPM) rate limits.
   - **Semantic Embeddings**: `sentence-transformers/all-MiniLM-L6-v2` (384D) hosted on **Hugging Face Inference API**.
 - **Local Engine (Ollama)**: When executed locally on your machine, it seamlessly switches to **Ollama** (`llama3.2` LLM + `nomic-embed-text` 768D embeddings) on `http://localhost:11434`.
 
@@ -93,7 +93,7 @@ My-AI/
 
 - **VectorDB**: Unified interface over all 3 algorithms (16D demo vectors)
 - **DocumentDB**: HNSW-only index for real embeddings (384D / 768D) with Hybrid Search
-- **OllamaClient**: Client for Ollama & Groq Cloud API (`/api/embeddings` + `/api/generate`)
+- **OllamaClient**: Client for Ollama & Groq Cloud API (`/api/embeddings` + `/api/generate`) with automatic model failover and `max_tokens=900` budget management
 
 ---
 
@@ -120,6 +120,7 @@ KD-Tree pruning relies on axis-aligned distance bounds. In high dimensions, almo
 
 | Problem | Fix |
 |---|---|
+| **Groq API (429) Request too large** | Output tokens are explicitly capped at `max_tokens=900` to comply with Groq free-tier OTPM limits (1000 tokens/min). |
 | **Ollama: OFFLINE in header** | Run `ollama serve` in a terminal (for local development) |
 | **Embedding takes time** | Ollama is downloading the model on first use, wait 1-2 minutes |
 | **Port 8080 already in use** | Kill the process: `netstat -ano \| findstr 8080` then `taskkill /PID <pid> /F` |
