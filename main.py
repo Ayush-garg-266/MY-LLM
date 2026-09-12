@@ -608,7 +608,8 @@ class OllamaClient:
             for m in models:
                 data = json.dumps({
                     "model": m,
-                    "messages": [{"role": "user", "content": prompt}]
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": 900
                 }).encode('utf-8')
                 req = urllib.request.Request(
                     url,
